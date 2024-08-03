@@ -11,7 +11,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _textController = TextEditingController();
-  final TextEditingController  _authorController = TextEditingController();
+  final TextEditingController _authorController = TextEditingController();
   bool _isModalVisible = false;
 
   @override
@@ -24,7 +24,8 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance.collection('posts').snapshots(),
+              stream:
+                  FirebaseFirestore.instance.collection('posts').snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return const Text('Error: Something went wrong');
@@ -34,14 +35,79 @@ class _HomeScreenState extends State<HomeScreen> {
                   return const CircularProgressIndicator();
                 }
 
-                final posts = snapshot.data!.docs.map((doc)
-                {
-                    final data = doc.data() as Map<String, dynamic>;
-                // Handle potential null values here
-                return Post.fromJson(data);
-              }).toList();
-
+                final posts = snapshot.data!.docs.map((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  // Handle potential null values here
+                  return Post.fromJson(data);
+                }).toList();
                 return ListView.builder(
+                  itemCount: posts.length,
+                  itemBuilder: (context, index) {
+                    final post = posts[index];
+                    return Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Row     for profile picture and author name
+                            Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 25,
+                                  backgroundImage: NetworkImage(
+                                      'https://example.com/avatar.jpg'), // Replace with actual image URL
+                                ),
+                                const SizedBox(width: 16.0),
+                                Text(post.author,
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                            const SizedBox(height: 8.0),
+                            // Post text
+                            Text(post.text),
+                            const SizedBox(height: 8.0),
+                            // Row for likes and dislikes (optional)
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    // const Icon(Icons.thumb_up,
+                                    //     color: Colors.blue),
+                                    // const SizedBox(width: 4.0),
+                                    IconButton(
+                                      icon: const Icon(Icons.thumb_up),
+                                      onPressed: post.id != null ? () => _likePost(post.id!) : null,
+                                    ),
+                                    Text('${post.likes}'),
+
+                                  ],
+                                ),
+                                Row(
+                                  children: [
+                                    // const Icon(Icons.thumb_down,
+                                    //     color: Colors.red),
+                                    // const SizedBox(width: 4.0),
+                                    IconButton(
+                                      icon: const Icon(Icons.thumb_down),
+                                      onPressed: post.id != null ? () => _dislikePost(post.id!) : null,
+                                    ),
+                                    Text('${post.dislikes}'),
+
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+
+                /*return ListView.builder(
                   itemCount: posts.length,
                   itemBuilder: (context, index) {
                     final post = posts[index];
@@ -78,7 +144,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     );
                   },
-                );
+                );  */
               },
             ),
           ),
@@ -109,7 +175,8 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               TextField(
                 controller: _authorController,
-                decoration: const InputDecoration(hintText: 'Enter author name'),
+                decoration:
+                    const InputDecoration(hintText: 'Enter author name'),
               ),
               ElevatedButton(
                 onPressed: () {
@@ -141,7 +208,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     try {
-      await FirebaseFirestore.instance.collection('posts').doc(doc.id).set(post.toJson());
+      await FirebaseFirestore.instance
+          .collection('posts')
+          .doc(doc.id)
+          .set(post.toJson());
       // Add a snackbar or other feedback for successful post creation
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Post created successfully')),
