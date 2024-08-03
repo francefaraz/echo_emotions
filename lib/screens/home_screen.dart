@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:echo_emotions/models/post.dart';
@@ -79,7 +80,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     // const SizedBox(width: 4.0),
                                     IconButton(
                                       icon: const Icon(Icons.thumb_up),
-                                      onPressed: post.id != null ? () => _likePost(post.id!) : null,
+                                      onPressed: post.id != null  ? () => _likePost(post.id!) : null,
                                     ),
                                     Text('${post.likes}'),
 
@@ -193,55 +194,78 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _toggleModal() {
-    setState(() {
+    if (!isUserLoggedIn()) {
+      Navigator.pushNamed(context, '/authentication');
+    }
+    else {
+      setState(() {
       _isModalVisible = !_isModalVisible;
     });
-  }
-
-  void _createPost(String text, String author) async {
-    final doc = await FirebaseFirestore.instance.collection('posts').add({});
-    final post = Post(
-      id: doc.id,
-      text: text,
-      author: author,
-      timestamp: Timestamp.now(),
-    );
-
-    try {
-      await FirebaseFirestore.instance
-          .collection('posts')
-          .doc(doc.id)
-          .set(post.toJson());
-      // Add a snackbar or other feedback for successful post creation
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Post created successfully')),
-      );
-    } catch (e) {
-      print('Error creating post: $e');
-      // Add a snackbar or other feedback for failed post creation
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error creating post')),
-      );
     }
   }
 
+  void _createPost(String text, String author) async {
+
+
+      final doc = await FirebaseFirestore.instance.collection('posts').add({});
+      final post = Post(
+        id: doc.id,
+        text: text,
+        author: author,
+        timestamp: Timestamp.now(),
+      );
+
+      try {
+        await FirebaseFirestore.instance
+            .collection('posts')
+            .doc(doc.id)
+            .set(post.toJson());
+        // Add a snackbar or other feedback for successful post creation
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Post created successfully')),
+        );
+      } catch (e) {
+        print('Error creating post: $e');
+        // Add a snackbar or other feedback for failed post creation
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error creating post')),
+        );
+      }
+
+  }
+
   void _likePost(String postId) async {
-    try {
+    if (!isUserLoggedIn()) {
+      Navigator.pushNamed(context, '/authentication');
+    }
+    else {
+      try {
       await FirebaseFirestore.instance.collection('posts').doc(postId).update({
         'likes': FieldValue.increment(1),
       });
     } catch (e) {
       print('Error liking post: $e');
     }
+    }
   }
 
   void _dislikePost(String postId) async {
-    try {
+    if (!isUserLoggedIn()) {
+      Navigator.pushNamed(context, '/authentication');
+    }
+    else {
+      try {
       await FirebaseFirestore.instance.collection('posts').doc(postId).update({
         'dislikes': FieldValue.increment(1),
       });
     } catch (e) {
       print('Error disliking post: $e');
     }
+    }
+  }
+
+  bool isUserLoggedIn() {
+    return FirebaseAuth.instance.currentUser != null;
+
   }
 }

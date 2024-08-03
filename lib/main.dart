@@ -8,6 +8,9 @@ import 'package:echo_emotions/providers/user_provider.dart';
 
 
 Future<void> main() async {
+
+  WidgetsFlutterBinding.ensureInitialized();
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
@@ -29,11 +32,15 @@ class MyApp extends StatelessWidget {
         theme: ThemeData(
           primarySwatch: Colors.blue,
         ),
-        home: const Authentication(),
+        home: const HomeScreen(), // Initially show HomeScreen
+        routes: {
+          '/authentication': (context) => const Authentication(),
+        },
       ),
     );
   }
 }
+
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
 
