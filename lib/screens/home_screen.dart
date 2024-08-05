@@ -25,22 +25,21 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream:
-                  FirebaseFirestore.instance.collection('posts').snapshots(),
+              stream: FirebaseFirestore.instance.collection('posts').snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return const Text('Error: Something went wrong');
                 }
 
                 if (!snapshot.hasData) {
-                  return const CircularProgressIndicator();
+                  return const Center(child: CircularProgressIndicator());
                 }
 
                 final posts = snapshot.data!.docs.map((doc) {
                   final data = doc.data() as Map<String, dynamic>;
-                  // Handle potential null values here
                   return Post.fromJson(data);
                 }).toList();
+
                 return ListView.builder(
                   itemCount: posts.length,
                   itemBuilder: (context, index) {
@@ -51,52 +50,42 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Row     for profile picture and author name
                             Row(
                               children: [
                                 CircleAvatar(
                                   radius: 25,
                                   backgroundImage: NetworkImage(
-                                      'https://example.com/avatar.jpg'), // Replace with actual image URL
+                                      'https://static.figma.com/app/icon/1/touch-180.png'),
                                 ),
                                 const SizedBox(width: 16.0),
-                                Text(post.author,
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.bold)),
+                                Text(
+                                  post.author ?? 'Muneer',
+                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                ),
                               ],
                             ),
                             const SizedBox(height: 8.0),
-                            // Post text
                             Text(post.text),
                             const SizedBox(height: 8.0),
-                            // Row for likes and dislikes (optional)
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Row(
                                   children: [
-                                    // const Icon(Icons.thumb_up,
-                                    //     color: Colors.blue),
-                                    // const SizedBox(width: 4.0),
                                     IconButton(
                                       icon: const Icon(Icons.thumb_up),
-                                      onPressed: post.id != null  ? () => _likePost(post.id!) : null,
+                                      onPressed: post.id != null ? () => _likePost(post.id!) : null,
                                     ),
                                     Text('${post.likes}'),
-
                                   ],
                                 ),
                                 Row(
                                   children: [
-                                    // const Icon(Icons.thumb_down,
-                                    //     color: Colors.red),
-                                    // const SizedBox(width: 4.0),
                                     IconButton(
                                       icon: const Icon(Icons.thumb_down),
                                       onPressed: post.id != null ? () => _dislikePost(post.id!) : null,
                                     ),
                                     Text('${post.dislikes}'),
-
                                   ],
                                 ),
                               ],
@@ -107,45 +96,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     );
                   },
                 );
-
-                /*return ListView.builder(
-                  itemCount: posts.length,
-                  itemBuilder: (context, index) {
-                    final post = posts[index];
-                    // return ListTile(
-                    //   title: Text(post.text ?? 'No text'), // Handle null text
-                    //   subtitle: Text('By ${post.author} - ${post.likes} likes - ${post.dislikes} dislikes'),
-                    //   // subtitle: Text('${post.likes ?? 0} likes - ${post.dislikes ?? 0} dislikes'),
-                    return ListTile(
-                        leading: CircleAvatar(
-                          radius: 25,
-                          backgroundImage: NetworkImage('https://example.com/avatar.jpg'), // Replace with actual image URL
-                        ),
-                        title: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                            Text(post.author, style: TextStyle(fontWeight: FontWeight.bold)),
-
-                        const SizedBox(height: 8),
-                    Text(post.text),
-                    ],
-                    ),
-                    trailing: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.thumb_up),
-                            onPressed: post.id != null ? () => _likePost(post.id!) : null,
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.thumb_down),
-                            onPressed: post.id != null ? () => _dislikePost(post.id!) : null,
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                );  */
               },
             ),
           ),
@@ -160,8 +110,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildModal() {
-    final _textController = TextEditingController();
-
     return BottomSheet(
       onClosing: () => _toggleModal(),
       builder: (BuildContext context) {
@@ -176,8 +124,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               TextField(
                 controller: _authorController,
-                decoration:
-                    const InputDecoration(hintText: 'Enter author name'),
+                decoration: const InputDecoration(hintText: 'Enter author name'),
               ),
               ElevatedButton(
                 onPressed: () {
@@ -195,77 +142,104 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _toggleModal() {
     if (!isUserLoggedIn()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please log in to create a post')),
+      );
       Navigator.pushNamed(context, '/authentication');
-    }
-    else {
+    } else {
       setState(() {
-      _isModalVisible = !_isModalVisible;
-    });
+        _isModalVisible = !_isModalVisible;
+      });
     }
   }
 
   void _createPost(String text, String author) async {
-
-
-      final doc = await FirebaseFirestore.instance.collection('posts').add({});
-      final post = Post(
-        id: doc.id,
-        text: text,
-        author: author,
-        timestamp: Timestamp.now(),
+    if (await isPostExists(text)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Post already exists')),
       );
+      return;
+    }
 
-      try {
-        await FirebaseFirestore.instance
-            .collection('posts')
-            .doc(doc.id)
-            .set(post.toJson());
-        // Add a snackbar or other feedback for successful post creation
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Post created successfully')),
-        );
-      } catch (e) {
-        print('Error creating post: $e');
-        // Add a snackbar or other feedback for failed post creation
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error creating post')),
-        );
-      }
+    final user = FirebaseAuth.instance.currentUser;
 
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please log in to create a post')),
+      );
+      return;
+    }
+
+    final userId = user.uid;
+
+    final docRef = await FirebaseFirestore.instance.collection('posts').add({
+      'text': text,
+      'author': user.displayName ?? user.email,
+      'userId': userId,
+      'timestamp': FieldValue.serverTimestamp(),
+      'likes': 0,
+      'dislikes': 0,
+    });
+
+    final post = Post(
+      id: docRef.id,
+      text: text,
+      author: author.isNotEmpty ? author : user.email?.split('@')[0] ?? 'Anonymous',
+      userId: userId,
+      timestamp: Timestamp.now(),
+    );
+
+    try {
+      await docRef.set(post.toJson());
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Post created successfully!')),
+      );
+    } catch (e) {
+      print('Error creating post: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error creating post')),
+      );
+    }
   }
 
   void _likePost(String postId) async {
     if (!isUserLoggedIn()) {
       Navigator.pushNamed(context, '/authentication');
-    }
-    else {
+    } else {
       try {
-      await FirebaseFirestore.instance.collection('posts').doc(postId).update({
-        'likes': FieldValue.increment(1),
-      });
-    } catch (e) {
-      print('Error liking post: $e');
-    }
+        await FirebaseFirestore.instance.collection('posts').doc(postId).update({
+          'likes': FieldValue.increment(1),
+        });
+      } catch (e) {
+        print('Error liking post: $e');
+      }
     }
   }
 
   void _dislikePost(String postId) async {
     if (!isUserLoggedIn()) {
       Navigator.pushNamed(context, '/authentication');
-    }
-    else {
+    } else {
       try {
-      await FirebaseFirestore.instance.collection('posts').doc(postId).update({
-        'dislikes': FieldValue.increment(1),
-      });
-    } catch (e) {
-      print('Error disliking post: $e');
-    }
+        await FirebaseFirestore.instance.collection('posts').doc(postId).update({
+          'dislikes': FieldValue.increment(1),
+        });
+      } catch (e) {
+        print('Error disliking post: $e');
+      }
     }
   }
 
   bool isUserLoggedIn() {
     return FirebaseAuth.instance.currentUser != null;
+  }
 
+  Future<bool> isPostExists(String text) async {
+    final querySnapshot = await FirebaseFirestore.instance
+        .collection('posts')
+        .where('text', isEqualTo: text)
+        .get();
+
+    return querySnapshot.docs.isNotEmpty;
   }
 }

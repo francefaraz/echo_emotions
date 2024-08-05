@@ -1,3 +1,7 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:echo_emotions/screens/authentication.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -5,6 +9,7 @@ import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'package:echo_emotions/screens/home_screen.dart';
 import 'package:echo_emotions/providers/user_provider.dart';
+
 
 
 Future<void> main() async {
@@ -15,7 +20,36 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   runApp(const MyApp());
+  // await importQuotes();
 }
+
+// Future<void> importQuotes() async {
+//   final firestore = FirebaseFirestore.instance;
+//   final quotesCollection = firestore.collection('posts');
+//
+//   try {
+//     final jsonData = jsonDecode(jsonString) as List<dynamic>;
+//
+//
+//     for (final quoteData in jsonData) {
+//       final updatedQuoteData = {
+//         'text': quoteData['quote'],
+//         'author': quoteData['quoteAuthor'],
+//         'likes':0,
+//         'dislikes':0,
+//         'userId':"iwK9aQymjwSCNFw7V929B5Ui3CE2",
+//         'category': 'inspirational',
+//         'timestamp': FieldValue.serverTimestamp(),
+//       };
+//
+//       await quotesCollection.add(updatedQuoteData);
+//     }
+//     print("done with for loop ");
+//
+//   } catch (e) {
+//     print('Error importing quotes: $e');
+//   }
+// }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
