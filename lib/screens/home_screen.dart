@@ -25,7 +25,9 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance.collection('posts').snapshots(),
+              stream: FirebaseFirestore.instance.collection('posts')
+                  .orderBy('timestamp', descending: true)
+                  .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return const Text('Error: Something went wrong');
@@ -203,6 +205,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _likePost(String postId) async {
+    print("posting id is " + postId);
     if (!isUserLoggedIn()) {
       Navigator.pushNamed(context, '/authentication');
     } else {
