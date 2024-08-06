@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-
 class Post {
   final String id;
   final String text;
@@ -9,6 +8,8 @@ class Post {
   final Timestamp timestamp;
   int likes;
   int dislikes;
+  List<String> likedBy;
+  List<String> dislikedBy;
 
   Post({
     required this.id,
@@ -19,23 +20,26 @@ class Post {
     required this.timestamp,
     this.likes = 0,
     this.dislikes = 0,
+    this.likedBy = const [],
+    this.dislikedBy = const [],
   });
 
   factory Post.fromJson(Map<String, dynamic> json) {
-    // Debugging statement to print JSON data
     print("json data from post is ${json}");
     final timestamp = json['timestamp'] is Timestamp
         ? json['timestamp'] as Timestamp
-        : Timestamp.fromDate(DateTime.now()); // Default value if missing or invalid
+        : Timestamp.fromDate(DateTime.now());
     return Post(
-      id: json['id'] ?? '', // Default to empty string if null
+      id: json['id'] ?? '',
       text: json['text'] ?? '',
       author: json['author'] ?? '',
       userId: json['userId'] ?? '',
       category: json['category'] ?? 'quotes',
-      timestamp: timestamp, // Ensure 'timestamp' is a Timestamp
+      timestamp: timestamp,
       likes: json['likes'] ?? 0,
       dislikes: json['dislikes'] ?? 0,
+      likedBy: List<String>.from(json['likedBy'] ?? []),
+      dislikedBy: List<String>.from(json['dislikedBy'] ?? []),
     );
   }
 
@@ -49,6 +53,8 @@ class Post {
       'timestamp': timestamp,
       'likes': likes,
       'dislikes': dislikes,
+      'likedBy': likedBy,
+      'dislikedBy': dislikedBy,
     };
   }
 }

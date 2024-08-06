@@ -3,6 +3,8 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:echo_emotions/screens/authentication.dart';
+import 'package:echo_emotions/screens/login_screen.dart';
+import 'package:echo_emotions/screens/register_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
@@ -20,10 +22,17 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(const MyApp());
-  // await importQuotes();
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => UserProvider()),
+      ],
+      child:const MyApp(),
+    ),
+  );
+// runApp(const MyApp());
 }
-
+// await importQuotes();
 Future<void> importQuotes() async {
   final firestore = FirebaseFirestore.instance;
   final quotesCollection = firestore.collection('posts');
@@ -90,26 +99,49 @@ Future<void> importQuotes() async {
   }
 }
 */
+// class MyApp extends StatelessWidget {
+//   const MyApp({super.key});
+//
+//   // This widget is the root of your application.
+//   @override
+//   Widget build(BuildContext context) {
+//     return
+//     ChangeNotifierProvider(
+//       create: (context) => UserProvider(),
+//       child: MaterialApp(
+//         title:
+//         'Post Sharing App',
+//         theme: ThemeData(
+//           primarySwatch: Colors.blue,
+//         ),
+//         home: const HomeScreen(), // Initially show HomeScreen
+//         routes: {
+//           '/authentication': (context) => const Authentication(),
+//           '/login': (context) => const LoginScreen(),
+//           '/register': (context) => const RegisterScreen(),
+//         },
+//       ),
+//     );
+//   }
+// }
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return
-    ChangeNotifierProvider(
-      create: (context) => UserProvider(),
-      child: MaterialApp(
-        title:
-        'Post Sharing App',
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-        ),
-        home: const HomeScreen(), // Initially show HomeScreen
-        routes: {
-          '/authentication': (context) => const Authentication(),
-        },
+    return MaterialApp(
+      title: 'Post Sharing App',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
       ),
+      initialRoute: '/',
+      routes: {
+          '/':(context) => const HomeScreen(),
+          '/authentication': (context) => const Authentication(),
+        '/login': (context) => const LoginScreen(),
+        '/register': (context) => const RegisterScreen(),
+        '/home': (context) => const HomeScreen(),
+      },
     );
   }
 }

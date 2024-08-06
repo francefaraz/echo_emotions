@@ -14,6 +14,13 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _textController = TextEditingController();
   final TextEditingController _authorController = TextEditingController();
   bool _isModalVisible = false;
+  String? _userId;
+
+  @override
+  void initState() {
+    super.initState();
+    _userId = FirebaseAuth.instance.currentUser?.uid;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,6 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
+                  print("error is ${snapshot.error}");
                   return const Text('Error: Something went wrong');
                 }
 
@@ -46,6 +54,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   itemCount: posts.length,
                   itemBuilder: (context, index) {
                     final post = posts[index];
+                    final isLiked = post.likedBy.contains(_userId);
+                    final isDisliked = post.dislikedBy.contains(_userId);
+
                     return Card(
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
@@ -75,7 +86,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                 Row(
                                   children: [
                                     IconButton(
-                                      icon: const Icon(Icons.thumb_up),
+                                      icon: Icon(
+                                        Icons.thumb_up,
+                                        color: isLiked ? Colors.blue : Colors.grey,
+                                      ),
                                       onPressed: post.id != null ? () => _likePost(post.id!) : null,
                                     ),
                                     Text('${post.likes}'),
@@ -84,7 +98,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                 Row(
                                   children: [
                                     IconButton(
-                                      icon: const Icon(Icons.thumb_down),
+                                      icon: Icon(
+                                        Icons.thumb_down,
+                                        color: isDisliked ? Colors.red : Colors.grey,
+                                      ),
                                       onPressed: post.id != null ? () => _dislikePost(post.id!) : null,
                                     ),
                                     Text('${post.dislikes}'),
@@ -147,7 +164,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please log in to create a post')),
       );
-      Navigator.pushNamed(context, '/authentication');
+      Navigator.pushNamed(context, '/login');
     } else {
       setState(() {
         _isModalVisible = !_isModalVisible;
@@ -181,6 +198,8 @@ class _HomeScreenState extends State<HomeScreen> {
       'timestamp': FieldValue.serverTimestamp(),
       'likes': 0,
       'dislikes': 0,
+      'likedBy': [],
+      'dislikedBy': [],
     });
 
     final post = Post(
@@ -205,31 +224,88 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _likePost(String postId) async {
-    print("posting id is " + postId);
     if (!isUserLoggedIn()) {
       Navigator.pushNamed(context, '/authentication');
-    } else {
-      try {
+      return;
+    }
+
+    final user = FirebaseAuth.instance.currentUser;
+    final userId = user?.uid;
+
+    if (userId == null) return;
+
+    try {
+      final postDoc = await FirebaseFirestore.instance.collection('posts').doc(postId).get();
+      final postData = postDoc.data();
+
+      if (postData != null) {
+        final likedBy = List<String>.from(postData['likedBy'] ?? []);
+        final dislikedBy = List<String>.from(postData['dislikedBy'] ?? []);
+
+        if (likedBy.contains(userId)) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('You have already liked this post')),
+          );
+          return;
+        }
+
+        if (dislikedBy.contains(userId)) {
+          await FirebaseFirestore.instance.collection('posts').doc(postId).update({
+            'dislikes': FieldValue.increment(-1),
+            'dislikedBy': FieldValue.arrayRemove([userId]),
+          });
+        }
+
         await FirebaseFirestore.instance.collection('posts').doc(postId).update({
           'likes': FieldValue.increment(1),
+          'likedBy': FieldValue.arrayUnion([userId]),
         });
-      } catch (e) {
-        print('Error liking post: $e');
       }
+    } catch (e) {
+      print('Error liking post: $e');
     }
   }
 
   void _dislikePost(String postId) async {
     if (!isUserLoggedIn()) {
       Navigator.pushNamed(context, '/authentication');
-    } else {
-      try {
+      return;
+    }
+
+    final user = FirebaseAuth.instance.currentUser;
+    final userId = user?.uid;
+
+    if (userId == null) return;
+
+    try {
+      final postDoc = await FirebaseFirestore.instance.collection('posts').doc(postId).get();
+      final postData = postDoc.data();
+
+      if (postData != null) {
+        final likedBy = List<String>.from(postData['likedBy'] ?? []);
+        final dislikedBy = List<String>.from(postData['dislikedBy'] ?? []);
+
+        if (dislikedBy.contains(userId)) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('You have already disliked this post')),
+          );
+          return;
+        }
+
+        if (likedBy.contains(userId)) {
+          await FirebaseFirestore.instance.collection('posts').doc(postId).update({
+            'likes': FieldValue.increment(-1),
+            'likedBy': FieldValue.arrayRemove([userId]),
+          });
+        }
+
         await FirebaseFirestore.instance.collection('posts').doc(postId).update({
           'dislikes': FieldValue.increment(1),
+          'dislikedBy': FieldValue.arrayUnion([userId]),
         });
-      } catch (e) {
-        print('Error disliking post: $e');
       }
+    } catch (e) {
+      print('Error disliking post: $e');
     }
   }
 
@@ -246,3 +322,4 @@ class _HomeScreenState extends State<HomeScreen> {
     return querySnapshot.docs.isNotEmpty;
   }
 }
+
