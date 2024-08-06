@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:echo_emotions/screens/authentication.dart';
 import 'package:echo_emotions/screens/login_screen.dart';
+import 'package:echo_emotions/screens/main_screen.dart';
 import 'package:echo_emotions/screens/register_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -136,7 +137,7 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: '/',
       routes: {
-          '/':(context) => const HomeScreen(),
+          '/':(context) => const MainScreen(),
           '/authentication': (context) => const Authentication(),
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
