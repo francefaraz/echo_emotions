@@ -2,7 +2,6 @@ import 'package:echo_emotions/screens/inspire_screen.dart';
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
 import 'profile_screen.dart';
-// import 'settings_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -18,7 +17,6 @@ class _MainScreenState extends State<MainScreen> {
     const HomeScreen(),
     const InspireScreen(),
     const ProfileScreen(),
-    // const SettingsScreen(),
   ];
 
   void _onItemTapped(int index) {
@@ -31,7 +29,8 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: _screens[_selectedIndex],
-      bottomNavigationBar: Stack(
+      bottomNavigationBar: _selectedIndex != 1 // Hide bottom nav when on InspireScreen
+          ? Stack(
         clipBehavior: Clip.none,
         children: [
           BottomNavigationBar(
@@ -44,10 +43,6 @@ class _MainScreenState extends State<MainScreen> {
                 icon: Icon(Icons.person),
                 label: 'Profile',
               ),
-              // BottomNavigationBarItem(
-              //   icon: Icon(Icons.settings),
-              //   label: 'Settings',
-              // ),
             ],
             currentIndex: _selectedIndex > 0 ? _selectedIndex - 1 : _selectedIndex,
             selectedItemColor: Colors.amber[800],
@@ -105,7 +100,8 @@ class _MainScreenState extends State<MainScreen> {
             ),
           ),
         ],
-      ),
+      )
+          : null, // No BottomNavigationBar when InspireScreen is active
     );
   }
 }
